@@ -19,23 +19,23 @@ try:
             stmt = "select * from dbc.tables where databasename='db1' and tablename = 'table1';"
 
             print "Execute query:\n%s" % stmt
-                with con.query(stmt) as qry:
+            with con.query(stmt) as qry:
+                print "(",
+                for col in qry.cols:
+                    print unicode(col), ",",
+                print ")"
+                for row in qry:
+                    count += 1
                     print "(",
-                    for col in qry.cols:
-                        print unicode(col), ",",
+                    for fld in row:
+                        print unicode(fld), ",",
                     print ")"
-                    for row in qry:
-                        count += 1
-                        print "(",
-                        for fld in row:
-                            print unicode(fld), ",",
-                        print ")"
         finally:
             if "qry" in locals():
                 del qry
         print "Query record count: %d." % count
 
-        print "Logoff.\n"
+        print "Logoff."
 except CliFail as ex:
     print "%s" % ex
 finally:
