@@ -31,6 +31,11 @@ typedef struct {
 	char errMsg[256 + 6];
 } CliDbcType;
 
+typedef struct {
+	struct CliPrepInfoType prep;
+	Pclchar cols[SysMaxParcelSize - sizeof(struct CliPrepInfoType)];
+} CliMetaType;
+
 typedef struct CliDataInfoType CliHeadType;
 typedef struct CliDInfoType CliInfoType;
 typedef struct CliIndicDataType CliDataType;
@@ -48,6 +53,7 @@ bool cli_dsc(CliDbcType* cli);
 
 long cli_irq(CliDbcType* cli, char* reqstr);
 long cli_erq(CliDbcType* cli);
+long cli_fpp(CliDbcType* cli, CliMetaType* meta);
 long cli_fip(CliDbcType* cli, CliHeadType* head);
 long cli_frp(CliDbcType* cli, CliDataType* data);
 

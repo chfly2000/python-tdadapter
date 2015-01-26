@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stringobject.h>
 #include <tupleobject.h>
+#include <structmember.h>
 
 typedef union {
 	PclWord SQLLen;
@@ -280,6 +281,40 @@ PyObject* unpackField(int fldIdx, CliInfoType *info, CliDataType *data,
 	return result;
 }
 
+PyObject* unpackColumns(CliMetaType meta) {
+	int i, idx;
+	PclInt16 int16;
+	PyObject *value, *result;
+
+	result = PyTuple_New(meta.prep.ColumnCount);
+	if (result == NULL) {
+		return NULL;
+	}
+
+	idx = 0;
+	for (i = 0; i < meta.prep.ColumnCount; i++) {
+		idx += 2;
+		idx += 2;
+		memcpy(&int16, &meta.cols[idx], sizeof(int16));
+		idx += 2;
+		idx += int16;
+		memcpy(&int16, &meta.cols[idx], sizeof(int16));
+		idx += 2;
+		idx += int16;
+		memcpy(&int16, &meta.cols[idx], sizeof(int16));
+		idx += 2;
+		value = PyString_FromStringAndSize(&meta.cols[idx], int16);
+		if (value == NULL) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(result, i, value);
+		idx += int16;
+	}
+
+	return result;
+}
+
 static void CliConn_Dealloc(CliConn* self) {
 	bool status = true;
 
@@ -444,6 +479,7 @@ CliConn_Methods, /* tp_methods */
 
 static void CliIter_Dealloc(CliIter* self) {
 	Py_CLEAR(self->conn);
+	Py_CLEAR(self->cols);
 	Py_TYPE(self)->tp_free((PyObject*) self);
 }
 
@@ -455,15 +491,28 @@ static int CliIter_Init(CliIter* self, PyObject* args, PyObject* kwds) {
 	}
 	Py_INCREF(conn);
 	self->conn = conn;
+	self->cols = NULL;
 
 	return 0;
 }
 
 static PyObject* CliIter_Enter(CliIter* self, PyObject* args) {
 	long status = -1;
+	CliMetaType meta;
 
 	if (!self->conn->cli.logged) {
 		PyErr_SetString(CliFail, "Already logged off.");
+		return NULL;
+	}
+
+	status = cli_fpp(&self->conn->cli, &meta);
+	if (status < 0) {
+		PyErr_SetString(CliFail, self->conn->cli.errMsg);
+		return NULL;
+	}
+	self->cols = unpackColumns(meta);
+	if (self->cols == NULL) {
+		PyErr_SetString(CliFail, "Unpack columns failed.");
 		return NULL;
 	}
 
@@ -535,6 +584,9 @@ static PyMethodDef CliIter_Methods[] = { { "__enter__",
 		(PyCFunction) CliIter_Enter, METH_NOARGS }, { "__exit__",
 		(PyCFunction) CliIter_Exit, METH_VARARGS }, { 0, 0, 0, 0 } };
 
+static PyMemberDef CliIter_Members[] = { { "cols", T_OBJECT_EX, offsetof(
+		CliIter, cols), READONLY, "column names" }, { NULL } };
+
 PyTypeObject CliIterType = { PyObject_HEAD_INIT(NULL) 0, /* ob_size */
 "clivii.CliIter", /* tp_name */
 sizeof(CliIter), /* tp_basicsize */
@@ -563,7 +615,7 @@ Py_TPFLAGS_DEFAULT, /* tp_flags */
 PyObject_SelfIter, /* tp_iter */
 (iternextfunc) CliIter_Next, /* tp_iternext */
 CliIter_Methods, /* tp_methods */
-0, /* tp_members */
+CliIter_Members, /* tp_members */
 0, /* tp_getset */
 0, /* tp_base */
 0, /* tp_dict */
@@ -606,6 +658,7 @@ PyMODINIT_FUNC initclivii(void) {
 	if (PyType_Ready(&CliConnType) < 0) {
 		return;
 	}
+
 	CliIterType.tp_new = PyType_GenericNew;
 	if (PyType_Ready(&CliIterType) < 0) {
 		return;

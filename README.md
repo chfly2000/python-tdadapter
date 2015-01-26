@@ -20,6 +20,10 @@ try:
 
             print "Execute query:\n%s" % stmt
                 with con.query(stmt) as qry:
+                    print "(",
+                    for col in qry.cols:
+                        print unicode(col), ",",
+                    print ")"
                     for row in qry:
                         count += 1
                         print "(",
@@ -38,3 +42,4 @@ finally:
     if "con" in locals():
         del con
 ```
+

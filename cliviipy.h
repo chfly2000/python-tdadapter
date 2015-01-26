@@ -32,6 +32,7 @@ extern PyTypeObject CliConnType;
 typedef struct {
 	PyObject_HEAD
 	CliConn* conn;
+	PyObject* cols;
 	CliHeadType head;
 	CliDataType data;
 } CliIter;

@@ -140,7 +140,7 @@ bool cli_ini(CliDbcType* cli) {
 	cli->dbc.ret_time = 'N';
 	cli->dbc.parcel_mode = 'Y';
 	cli->dbc.wait_for_resp = 'Y';
-	cli->dbc.req_proc_opt = 'E';
+	cli->dbc.req_proc_opt = 'B';
 	cli->dbc.charset_type = 'N';
 	cli->dbc.inter_ptr = cli->charset;
 
@@ -253,6 +253,39 @@ long cli_erq(CliDbcType* cli) {
 	}
 
 	return 0;
+}
+
+long cli_fpp(CliDbcType* cli, CliMetaType* meta) {
+	Int32 result = EM_OK;
+	struct CliFailureType* failPcl = NULL;
+
+	cli->hasErr = false;
+	while (true) {
+		cli->dbc.func = DBFFET;
+		DBCHCL(&result, dummy, &cli->dbc);
+		if (result == REQEXHAUST) {
+			return 0;
+		} else if (result != EM_OK) {
+			seterr(cli, result, cli->dbc.msg_text);
+			return -1;
+		} else {
+			switch (cli->dbc.fet_parcel_flavor) {
+			case PclPREPINFO :
+				memcpy(meta, cli->dbc.fet_data_ptr, cli->dbc.fet_ret_data_len);
+				return cli->dbc.fet_ret_data_len;
+			case PclFAILURE :
+			case PclERROR :
+				failPcl = (struct CliFailureType*) cli->dbc.fet_data_ptr;
+				seterr(cli, failPcl->Code, failPcl->Msg);
+				return -1;
+			case PclENDSTATEMENT :
+			case PclENDREQUEST :
+				return 0;
+			}
+		}
+	}
+
+	return -1;
 }
 
 long cli_fip(CliDbcType* cli, CliHeadType* head) {
