@@ -1,5 +1,17 @@
-# tdcliviipy
-Simple Python module for access teradata database by CLIv2.
+# Description
+
+tdcliviipy is a Python extension library which allows to connect to Teradata RDBMS via CLIv2 (Teradata native access interface).
+
+# Requirements
+
+    CLIv2 (32bit / 64bit)
+    C compiler
+
+# Installation
+
+    setup.py install build --compile=mingw32
+
+# Usage
 
 ```python
 from clivii import connect, CliFail
