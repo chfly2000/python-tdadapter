@@ -217,7 +217,7 @@ long cli_irq(CliDbcType* cli, char* reqstr) {
 			}
 		}
 	}
-	printf(reqstr);
+	// printf(reqstr);
 	if (!dbfirq(cli, reqstr)) {
 		return -1;
 	}

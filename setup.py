@@ -3,9 +3,9 @@ from distutils.core import setup, Extension
 clivii = Extension("clivii",
                     define_macros = [("MAJOR_VERSION", "1"),
                                      ("MINOR_VERSION", "0")],
-                    include_dirs = ["C:/Program Files/Teradata/Client/13.10/CLIv2/inc"],
+                    include_dirs = ["C:/Program Files (x86)/Teradata/Client/14.00/CLIv2/inc"],
                     libraries = ["wincli32"],
-                    library_dirs = ["C:/Program Files/Teradata/Client/13.10/CLIv2/lib"],
+                    library_dirs = ["C:/Program Files (x86)/Teradata/Client/14.00/CLIv2/lib"],
                     sources = ["clivii.c", "cliviipy.c"])
 
 setup(name = "clivii",
